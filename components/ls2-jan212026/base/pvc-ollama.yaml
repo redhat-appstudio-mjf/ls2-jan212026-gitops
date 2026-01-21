@@ -1,0 +1,18 @@
+# Persistent storage for Ollama models
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app.kubernetes.io/instance: ls2-jan212026-ollama
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: ls2-jan212026-ollama-data
+    app.kubernetes.io/part-of: ls2-jan212026
+    app.kubernetes.io/component: ollama
+  name: ls2-jan212026-ollama-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      # Ollama models can be large (llama-guard3:8b ~5GB)
+      storage: 20Gi

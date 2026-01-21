@@ -1,0 +1,21 @@
+# Llama Stack Environment Variables ConfigMap
+# Contains non-sensitive configuration values from the template.
+# These are injected as environment variables into the Llama Stack container.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ls2-jan212026-llama-stack-env
+  labels:
+    app.kubernetes.io/instance: ls2-jan212026
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: ls2-jan212026-llama-stack-env
+    app.kubernetes.io/component: llama-stack
+data:
+  # vLLM Server URL
+  VLLM_URL: "https://qwen3-8b-fp8-apicast-production.apps.rosa.redhat-ai-dev.m6no.p3.openshiftapps.com:443/v1"
+  
+  # Ollama Server URL (points to deployed Ollama service)
+  OLLAMA_URL: "http://ls2-jan212026-ollama:11434"
+  
+  # Safety Model for guardrails
+  SAFETY_MODEL: "ollama/llama-guard3:8b"

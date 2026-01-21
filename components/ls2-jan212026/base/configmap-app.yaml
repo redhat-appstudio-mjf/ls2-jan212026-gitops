@@ -1,0 +1,31 @@
+# Application Configuration ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ls2-jan212026-app-config
+  labels:
+    app.kubernetes.io/instance: ls2-jan212026
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: ls2-jan212026-app-config
+data:
+  # Inference model configuration
+  INFERENCE_MODEL: "vllm/redhataiqwen3-8b-fp8-dynamic"
+  
+  # Guardrail model for content safety
+  GUARDRAIL_MODEL: "ollama/llama-guard3:8b"
+  
+  # Model for MCP tool calls
+  MCP_TOOL_MODEL: "vllm/redhataiqwen3-8b-fp8-dynamic"
+  
+  # GitHub repository URL for issue creation
+  GITHUB_URL: "https://github.com/redhat-appstudio-mjf/agentic-sample-1"
+  
+  # Ingestion configuration path (baked into image)
+  INGESTION_CONFIG: "/app-root/config/ingestion-config.yaml"
+  
+  # RAG file metadata path (writable location for runtime updates)
+  RAG_FILE_METADATA: "/tmp/rag_file_metadata.json"
+  
+  # Maximum concurrent workflow threads
+  EXECUTOR_WORKERS: "10"
+

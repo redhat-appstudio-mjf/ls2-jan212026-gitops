@@ -1,0 +1,52 @@
+# Initialize Namespace Job
+# This Job runs on deployment to set up the namespace with required secrets
+# It triggers a PipelineRun that uses the local dev-namespace-setup Task
+# The Task reads credentials directly from the cicd-credentials secret
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: initialize-namespace-ls2-jan212026
+  labels:
+    app.kubernetes.io/part-of: ls2-jan212026
+    app.kubernetes.io/component: namespace-setup
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      name: initialize-namespace-ls2-jan212026
+    spec:
+      serviceAccountName: pipeline
+      restartPolicy: Never
+      containers:
+        - name: initialize-namespace
+          image: quay.io/redhat-ai-dev/utils:latest
+          command:
+            - /bin/bash
+            - -c
+            - |
+              NS=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+              echo "=== Initialize RHDH Namespace: $NS ==="
+              
+              # Create a PipelineRun that runs the dev-namespace-setup Task
+              # The Task reads credentials directly from the cicd-credentials secret
+              cat <<PIPELINERUN | oc create -f -
+              apiVersion: tekton.dev/v1
+              kind: PipelineRun
+              metadata:
+                generateName: dev-namespace-setup-
+                namespace: $NS
+              spec:
+                pipelineSpec:
+                  tasks:
+                    - name: configure-namespace
+                      taskRef:
+                        name: ls2-jan212026-dev-namespace-setup
+                      params:
+                        - name: cicd_secret_name
+                          value: "cicd-credentials"
+              PIPELINERUN
+              
+              echo "=== PipelineRun created successfully ==="

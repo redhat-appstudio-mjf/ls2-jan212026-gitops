@@ -1,0 +1,91 @@
+# Main Streamlit Application Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    tad.gitops.set/image: ".spec.template.spec.containers[0].image"
+    tad.gitops.get/image: ".spec.template.spec.containers[0].image"
+    tad.gitops.set/replicas: ".spec.replicas"
+    tad.gitops.get/replicas: ".spec.replicas"
+  labels:
+    app.kubernetes.io/instance: ls2-jan212026
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: ls2-jan212026
+    app.kubernetes.io/part-of: ls2-jan212026
+    app.kubernetes.io/component: streamlit-ui
+  name: ls2-jan212026
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: ls2-jan212026
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: ls2-jan212026
+        app.kubernetes.io/component: streamlit-ui
+    spec:
+      containers:
+        - name: streamlit-app
+          # Default bootstrap image - will be updated by Tekton pipeline via deployment-patch
+          image: quay.io/redhat-ai-dev/agentic-sample:dev
+          imagePullPolicy: Always
+          envFrom:
+            - configMapRef:
+                name: ls2-jan212026-app-config
+            - secretRef:
+                name: app-secrets
+                optional: false
+          env:
+            # Fix cache permissions in OpenShift (runs as arbitrary non-root user)
+            - name: HOME
+              value: "/tmp"
+            - name: HF_HOME
+              value: "/tmp/.cache/huggingface"
+            - name: TRANSFORMERS_CACHE
+              value: "/tmp/.cache/huggingface"
+            # Service URLs
+            - name: LLAMA_STACK_URL
+              value: "http://ls2-jan212026-llama-stack:8321"
+            - name: LLAMA_STACK_SERVER_OPENAI
+              value: "http://ls2-jan212026-llama-stack:8321/v1/openai/v1"
+            - name: MCP_SERVER_URL
+              value: "http://ls2-jan212026-mcp-server:8080/mcp"
+          ports:
+            - containerPort: 8501
+              name: http
+              protocol: TCP
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "500m"
+            limits:
+              memory: "6Gi"
+              cpu: "2000m"
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          readinessProbe:
+            httpGet:
+              path: /_stcore/health
+              port: 8501
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /_stcore/health
+              port: 8501
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          volumeMounts:
+            - name: llama-data
+              mountPath: /app-root/.llama
+      volumes:
+        - name: llama-data
+          emptyDir: {}
+
